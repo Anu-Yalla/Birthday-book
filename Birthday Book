@@ -1,0 +1,238 @@
+import os
+
+# Here's one function for you. No reason for everyone to write this one.
+def print_help(): 
+    """This function can be used to print out the help message."""
+    print("Allowed commands:")
+    print("add firstName lastName month day year")
+    print("list") 
+    print("delete number")
+    print("search name")
+    print("save filename")
+    print("load filename")
+    print("help")
+    print("echo on")
+    print("echo off")
+    print("quit")
+
+
+class Birthday:
+    """Creates a birthday class that takes parameters: first_name, last_name, month , day , year """
+    def __init__(self, first_name, last_name, month , day , year):
+        self._first_name = first_name
+        self._last_name = last_name
+        self._month = month
+        self._day = day
+        self._year = year
+
+    def __str__(self):
+        return f"{self._first_name} {self._last_name}, {self._month}/{self._day}/{self._year}"
+    
+
+class BdayBook:
+    """Creates a BdayBook class that stores all the Birthday objects in a list. """
+    def __init__(self):
+        self._book_entries = []
+    
+    def add_bday(self, first_name, last_name, month, day, year):
+        success = False
+        while not success:
+            try:
+                month = int(month)
+                day = int(day)
+                year = int(year)
+                new_bday = Birthday(first_name, last_name, month, day, year)
+                self._book_entries.append(new_bday)
+                print(f'Added "{new_bday}" to the birthdays book.')
+                success = True
+            except ValueError:
+                print("Error: Unable to add birthdays to book. Please use integers for dates.")
+    
+    def __len__(self):
+        """This function returns the length of the list of birthdays"""
+        return len(self._book_entries)
+
+    def get_list_of_bdays(self):
+        """This function Lists and prints all of the birthday entries."""
+        if len(self._book_entries) == 0:
+            print("The birthday book is empty.")
+        else:
+            for i in range(len(self._book_entries)):
+                print(f"{i+1}. {self._book_entries[i]}")
+
+    def delete(self, user_input):
+        """ This procedure will take the user input and delete that index entry. """
+        success = False
+        while not success:
+            try:
+                entry_num = int(user_input)
+                success = True
+
+            except ValueError: # If the user input is not a valid integer, print an error message
+                print('Error: Please specify the item to delete using an integer.')
+                return
+
+        if entry_num < 1 or entry_num > len(self._book_entries):
+            print("I'm sorry, but there is no such entry in the book.")
+            return
+
+        else:
+            delete_entry = self._book_entries[entry_num -1]
+            # Ask for the user to confirm in order for deletion
+            confirm = input(f"Really delete {delete_entry} from the birthday book? (y/n) ").lower()
+
+            # Keep asking until the user gives a valid input (y or n)
+            while confirm != "y" and confirm != "n" :
+                confirm = input('Please enter "y" or "n" (y/n) ').lower()
+
+            if confirm == "y":
+                self._book_entries.pop(entry_num - 1)  # Remove the entry from the list
+                print(f"{delete_entry} has been deleted.")
+            else:
+                print(f"{delete_entry} was not deleted.")
+
+    def search(self, name):
+        """This function searches for the user's inputed and matches it with the last or first names in the list."""
+        matches= []
+        for entry in self._book_entries: 
+            # Check if the name matches either first or last name (case-insensitive)
+            if name.lower() in entry._first_name.lower() or name.lower() in entry._last_name.lower():
+                matches.append(entry) 
+
+        if matches:  
+            print(f'Entries with a name of "{name}":')
+            for match in matches: 
+                match_details = f"{match._first_name} {match._last_name}, {match._month}/{match._day}/{match._year}"
+                print(f"   {match_details}")
+        else: # If no matches found
+            print(f"I'm sorry, but there are no entries with a name of \"{name}\".")
+
+    def save_to_file(self, filename):
+        """This function takes the list of birthdays and writes them to a text file."""
+        outfile = open(filename, "w")
+        outfile.write("Birthday Book File: \n")
+        for i in range(len(self._book_entries)):
+                outfile.write(f"{str(self._book_entries[i])}")
+                outfile.write("\n")
+        print(f'Saved birthdays to "{filename}".')
+        outfile.close()
+
+    def load_from_file(self, filename):
+        """This function loads the specified file if valid and adds them to the list."""
+        infile = open(filename, "r")
+        first_line = infile.readline().strip()
+        if first_line != "Birthday Book File:":
+            print(f"I'm sorry, but \"{filename}\" is not in the correct")
+            print("format. You can only load files saved by this same program.")
+            return
+        try:
+            for line in infile:
+                parts = line.strip().split()
+                if len(parts) == 5:  
+                    first_name = parts[1].strip()
+                    last_name = parts[2].strip()
+                    month = parts[3].strip()
+                    day = parts[4].strip()
+                    year = parts[5].strip()
+
+                    new_bday = Birthday(first_name, last_name, month, day, year)
+                    self._book_entries.append(new_bday)
+
+            print(f"Birthdays in \"{filename}\" added to birthday book.")
+            infile.close()
+        except FileNotFoundError:
+            print(f"Error: File '{filename}' not found.")
+
+def echo_message(user_choice):
+    """This function will print the echo message whenever called."""
+    user_input = " ".join(user_choice)
+    print(f'You entered: "{user_input.strip()}"')
+
+def main():
+    """The main function of the Birthday Book program."""
+    bday_book = BdayBook()
+    echo_on = False
+
+    print("Welcome to the Birthday Book Manager" )
+    while True:
+        user_choice = input(">").split()
+        if user_choice[0] == "quit":
+            break
+
+        elif user_choice[0] == "echo":
+            if user_choice[1] == "on":
+                echo_on = True
+                print("Echo turned on.")
+            elif user_choice[1] == "off":
+                echo_on = False
+                print("Echo turned off.")
+            else:
+                print( "Error: unknown argument for echo. Enter 'on' or 'off'.")
+
+        elif user_choice[0] == "add":
+            if echo_on == True:
+                echo_message(user_choice)
+            # Check if there are enough arguments (5: first_name, last_name, month, day, year)
+            if len(user_choice) == 6:
+                first_name = user_choice[1]
+                last_name = user_choice[2]
+                month = user_choice[3]
+                day = user_choice[4]
+                year = user_choice[5]
+
+                bday_book.add_bday(first_name, last_name, month, day, year)
+            else:
+                print("I am sorry, but that is not a recognized command, or you have entered an incorrect number of arguments.")
+        
+        elif user_choice[0] == "list":
+            if echo_on == True:
+                echo_message(user_choice)
+            bday_book.get_list_of_bdays()
+        
+        elif user_choice[0] == "delete":
+            if echo_on == True:
+                echo_message(user_choice)
+            if len(user_choice) == 2:
+                bday_book.delete(user_choice[1])
+            else:
+                print("Error: Please specify the item to delete using an integer.")
+
+        elif user_choice[0] == "search":
+            if echo_on == True:
+                echo_message(user_choice)
+            if len(user_choice) == 2:
+                bday_book.search(user_choice[1])
+            else:
+                print("Error: Please specify the item to delete using an integer.")
+
+        elif user_choice[0] == "help":
+            if echo_on == True:
+                echo_message(user_choice)
+            print_help()
+
+        elif user_choice[0] == "save":
+            if echo_on == True:
+                echo_message(user_choice)
+            if len(user_choice) == 2:
+                try:
+                    filename = str(user_choice[1])
+                    bday_book.save_to_file(filename)
+                except ValueError:
+                    print("I'm sorry please enter a valid string file name to save in")
+        
+        elif user_choice[0] == "load":
+            if echo_on == True:
+                echo_message(user_choice)
+            if len(user_choice) == 2:
+                try:
+                    filename = str(user_choice[1])
+                    bday_book.load_from_file(filename)
+                except ValueError:
+                    print("I'm sorry please enter a valid string file name to load from.")
+
+        else:
+            print("Invalid command. Type 'help' for a list of valid commands.")
+
+
+if __name__ == "__main__":
+    main()
